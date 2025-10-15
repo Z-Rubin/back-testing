@@ -46,19 +46,23 @@ class BacktesterEngine:
             for symbol in self.symbols:
                 row = self.data[symbol].iloc[idx]
                 candle = Candle(
-                    timestamp=row['timestamp'],
+                    symbol=symbol,
+                    timestamp=pd.to_datetime(row['timestamp']),
                     open=row['open'],
                     high=row['high'],
                     low=row['low'],
                     close=row['close'],
-                    volume=row['volume']
+                    volume=row.get('volume', 0)
                 )
                 market_prices[symbol] = candle.close
 
                 # Send candle to all strategies
                 for strategy in self.strategies:
                     order = strategy.on_candle(candle, symbol)
-                    self.broker.submit_order(order, market_prices)
+                    if order:
+                        fill = self.broker.submit_order(order, market_prices)
+                        if fill:
+                            strategy.on_fill(fill)
 
             # Record portfolio snapshot
             self.portfolio.record_snapshot(
@@ -68,4 +72,5 @@ class BacktesterEngine:
 
         # End-of-backtest hooks
         for strategy in self.strategies:
-            strategy.on_end()
+            if hasattr(strategy, 'on_end'):
+                strategy.on_end()

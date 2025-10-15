@@ -6,7 +6,7 @@ class StrategyBase:
         pass
     def initialize(self):
         pass
-    def on_candle(self, candle: Candle) -> list[Order]:
+    def on_candle(self, candle: Candle, symbol: str) -> list[Order]:
         # Implement strategy logic here
         pass
     def on_fill(self, fill: Fill):

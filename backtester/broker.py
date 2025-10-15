@@ -12,7 +12,13 @@ class Broker:
         self.fills: List[Fill] = []
 
     def submit_order(self, order: Order, market_prices: Dict[str, float]) -> Fill:
-        return self.execute_order(order, market_prices)
+        if order is None:
+            return None
+        fill = self.execute_order(order, market_prices)
+        if fill:
+            self.fills.append(fill)
+            self.portfolio.apply_fill(fill)
+        return fill
 
     def execute_order(self, order: Order, market_prices: Dict[str, float]) -> Fill:
         symbol = order.symbol

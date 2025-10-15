@@ -11,8 +11,7 @@ class Candle:
     high: np.float64
     low: np.float64
     close: np.float64 | None = None
-    volume_base: np.float64 | None = None
-    volume_quote: np.float64 | None = None
+    volume: np.float64 | None = None
 
 @dataclass(slots=True)
 class Order:
@@ -26,10 +25,11 @@ class Order:
 @dataclass(slots=True)
 class Fill:
     order_id: str
+    fill_id: str
     symbol: str
     is_buy: bool
     price: float
-    quantity: float
+    size: float
     fee: float
     fee_currency: str
     timestamp: datetime

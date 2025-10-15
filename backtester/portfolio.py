@@ -27,7 +27,7 @@ class Portfolio:
     def apply_fill(self, fill: Fill):
         symbol = fill.symbol
         is_buy = fill.is_buy
-        size = fill.quantity
+        size = fill.size
         price = fill.price
         fee = fill.fee
 
