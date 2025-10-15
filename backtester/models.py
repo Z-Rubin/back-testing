@@ -16,14 +16,16 @@ class Candle:
 
 @dataclass(slots=True)
 class Order:
+    id: str
     symbol: str
     is_buy: bool
     price: float
-    quantity: float
+    size: float
 
 
 @dataclass(slots=True)
 class Fill:
+    order_id: str
     symbol: str
     is_buy: bool
     price: float
