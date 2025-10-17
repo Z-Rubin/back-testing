@@ -3,10 +3,11 @@ import random
 from datetime import datetime
 
 from backtester.models import Fill, Order
+from backtester.portfolio import Portfolio
 
 class Broker:
-    def __init__(self, portfolio, fee_rate=0.001, slippage_pct=0.0):
-        self.portfolio = portfolio
+    def __init__(self, portfolio: Portfolio, fee_rate=0.001, slippage_pct=0.0):
+        self.portfolio: Portfolio = portfolio
         self.fee_rate = fee_rate
         self.slippage_pct = slippage_pct
         self.fills: List[Fill] = []

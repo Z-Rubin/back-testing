@@ -37,26 +37,47 @@ class Portfolio:
         pos = self.positions[symbol]
 
         signed_size = size if is_buy else -size
+        original_signed_size = signed_size  # Store original for cash calculation
 
         if pos.size * signed_size < 0:
             closed_size = min(abs(pos.size), abs(signed_size))
             pnl = closed_size * (price - pos.avg_price) * (1 if pos.size > 0 else -1)
             pos.realized_pnl += pnl
-            signed_size = signed_size + (closed_size if pos.size < 0 else -closed_size)
-
-        if pos.size * signed_size >= 0:
-            total_cost = pos.avg_price * abs(pos.size) + price * abs(signed_size)
-            pos.size += signed_size
-            if pos.size != 0:
-                pos.avg_price = total_cost / abs(pos.size)
+            
+            if pos.size > 0:
+                pos.size -= closed_size  # Close long position
             else:
-                pos.avg_price = 0.0
-        else:
-            pos.size += signed_size
-            if pos.size == 0:
+                pos.size += closed_size  # Close short position
+            
+            if signed_size > 0:
+                signed_size -= closed_size
+            else:
+                signed_size += closed_size
+            
+            if abs(pos.size) < 1e-10:
+                pos.size = 0.0
                 pos.avg_price = 0.0
 
-        cash_change = -signed_size * price - fee
+        # If there's still trade size remaining after closing, open new position
+        if abs(signed_size) > 1e-10:
+            if pos.size == 0:
+                pos.size = signed_size
+                pos.avg_price = price
+            else:
+                total_cost = pos.avg_price * abs(pos.size) + price * abs(signed_size)
+                pos.size += signed_size
+                if pos.size != 0:
+                    pos.avg_price = total_cost / abs(pos.size)
+                else:
+                    pos.avg_price = 0.0
+
+        # Handle floating-point precision issues - if position is very small, set to zero
+        if abs(pos.size) < 1e-10:
+            pos.size = 0.0
+            pos.avg_price = 0.0
+
+        # Use original signed_size for cash calculation, not the modified version
+        cash_change = -original_signed_size * price - fee
         self.cash += cash_change
 
 

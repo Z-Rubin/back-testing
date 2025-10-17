@@ -29,6 +29,8 @@ class BacktesterEngine:
     def initialize(self):
         for strategy in self.strategies:
             strategy.symbols = self.symbols
+            if hasattr(strategy, 'set_portfolio'):
+                strategy.set_portfolio(self.portfolio)
             strategy.initialize(self.data)
 
     def run_backtest(self):
@@ -64,6 +66,10 @@ class BacktesterEngine:
                         if fill:
                             strategy.on_fill(fill)
 
+            if idx == num_steps - 1:
+                # Close all positions at the end of backtest
+                self._close_all_positions(market_prices)
+
             # Record portfolio snapshot
             self.portfolio.record_snapshot(
                 timestamp=self.data[self.symbols[0]].iloc[idx]['timestamp'],
@@ -74,3 +80,35 @@ class BacktesterEngine:
         for strategy in self.strategies:
             if hasattr(strategy, 'on_end'):
                 strategy.on_end()
+
+    def _close_all_positions(self, market_prices: Dict[str, float]):
+        """
+        Close all open positions at the end of the backtest by creating
+        market orders in the opposite direction.
+        """
+        from backtester.models import Order
+        import uuid
+
+        for symbol, position in self.portfolio.positions.items():
+            if abs(position.size) > 1e-8:
+                is_buy = position.size < 0
+                size = abs(position.size)
+                
+                closing_order = Order(
+                    id=f"CLOSE_{uuid.uuid4()}",
+                    symbol=symbol,
+                    is_buy=is_buy,
+                    price=market_prices.get(symbol, position.avg_price),
+                    size=size
+                )
+                
+                fill = self.broker.submit_order(closing_order, market_prices)
+                
+                if fill:
+                    for strategy in self.strategies:
+                        if hasattr(strategy, 'on_fill'):
+                            strategy.on_fill(fill)
+            
+            if abs(position.size) < 1e-8:
+                position.size = 0.0
+                position.avg_price = 0.0
